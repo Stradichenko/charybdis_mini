@@ -39,21 +39,38 @@ static uint16_t auto_pointer_layer_timer = 0;
 #endif     // CHARYBDIS_AUTO_POINTER_LAYER_TRIGGER_ENABLE
 
 #define LOWER MO(LAYER_LOWER)
+#define RAISE MO(LAYER_ADJUST)
+#define PT_Z LT(LAYER_POINTER, KC_Z)
+#define PT_SLSH LT(LAYER_POINTER, KC_SLSH)
+
+enum custom_keycodes {
+  KC_nh_KEY = SAFE_RANGE,
+  MBTN1,
+  MBTN2,
+  MBTN3,
+  SCRL
+};
+
+
+#define LOWER MO(LAYER_LOWER)
 #define RAISE MO(LAYER_RAISE)
 #define PT_Z LT(LAYER_POINTER, KC_Z)
 #define PT_SLSH LT(LAYER_POINTER, KC_SLSH)
+
+#define KC_C_GUI LCTL_T(KC_LGUI)
+#define KC_S_ESC LSFT_T(KC_ESC)
 
 // clang-format off
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   [LAYER_BASE] = LAYOUT(
   // ╭──────────────────────────────────────────────────────╮ ╭──────────────────────────────────────────────────────╮
-       KC_LGUI,    KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,       KC_Y,    KC_U,    KC_I,    KC_O,    KC_P, KC_RGUI,
+       KC_LGUI,    KC_Q,    KC_G,    KC_M,    KC_L,    KC_W,       KC_Y,    KC_F,    KC_U,    KC_B,    KC_SCLN, RAISE,
   // ├──────────────────────────────────────────────────────┤ ├──────────────────────────────────────────────────────┤
-       KC_LCTL,    KC_A,    KC_S,    KC_D,    KC_F,    KC_G,       KC_H,    KC_J,    KC_K,    KC_L, KC_SCLN, KC_RCTL,
+       KC_LCTL,    KC_D,    KC_S,    KC_T,    KC_N,    KC_R,       KC_I,    KC_A,    KC_E,    KC_0, KC_H, KC_QUOT,
   // ├──────────────────────────────────────────────────────┤ ├──────────────────────────────────────────────────────┤
-       KC_LSFT,    PT_Z,    KC_X,    KC_C,    KC_V,    KC_B,       KC_N,    KC_M, KC_COMM,  KC_DOT, PT_SLSH, KC_RSFT,
+       KC_LSFT,    KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,       KC_K,    KC_P, KC_COMMA,  KC_DOT, PT_SLSH, PT_Z,
   // ╰──────────────────────────────────────────────────────┤ ├──────────────────────────────────────────────────────╯
-                                  KC_BSPC,  KC_SPC,   LOWER,      RAISE,  KC_ENT
+                                  KC_BSPC,  KC_SPC,   MBTN1,      KC_C_GUI,  MO(1)
   //                            ╰───────────────────────────╯ ╰──────────────────╯
   ),
 
@@ -134,3 +151,59 @@ layer_state_t layer_state_set_user(layer_state_t state) {
 // Forward-declare this helper function since it is defined in rgb_matrix.c.
 void rgb_matrix_update_pwm_buffers(void);
 #endif
+
+
+
+// Processing custom keycodes
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+  report_mouse_t currentReport = {};
+
+  switch (keycode) {
+    case MBTN1:
+      currentReport = pointing_device_get_report();
+      if (record->event.pressed) {
+        currentReport.buttons |= MOUSE_BTN1;
+      } else {
+        currentReport.buttons &= ~MOUSE_BTN1;
+      }
+      pointing_device_set_report(currentReport);
+      return false;
+
+    case MBTN2:
+      currentReport = pointing_device_get_report();
+      if (record->event.pressed) {
+        currentReport.buttons |= MOUSE_BTN2;
+      } else {
+        currentReport.buttons &= ~MOUSE_BTN2;
+      }
+      pointing_device_set_report(currentReport);
+      return false;
+
+    case MBTN3:
+      currentReport = pointing_device_get_report();
+      if (record->event.pressed) {
+        currentReport.buttons |= MOUSE_BTN3;
+      } else {
+        currentReport.buttons &= ~MOUSE_BTN3;
+      }
+      pointing_device_set_report(currentReport);
+      return false;
+
+    case SCRL:
+      if (record->event.pressed) {
+        isScrollMode = true;
+        dprint("Scroll ON\n");
+      } else {
+        isScrollMode = false;
+        dprint("Scroll OFF\n");
+      }
+      return false;
+
+    case KC_nh_KEY:
+      if (record->event.pressed) {
+        SEND_STRING(SS_DOWN(X_LALT) SS_TAP(X_P0) SS_TAP(X_P2) SS_TAP(X_P4) SS_TAP(X_P1) SS_UP(X_LALT));
+      }
+      return false;
+  }
+  return true;
+}
